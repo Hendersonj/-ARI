@@ -34,6 +34,9 @@
 .PARAMETER IncludeTags
     Use this parameter to include Tags of every Azure Resources
 
+.PARAMETER SaveResourceCache
+    Use this parameter to persist the collected Resources/Subscriptions/Advisories/ResourceContainers as JSON files in the DiagramCache folder, so a separate command (e.g. Export-ARILucidDiagram) can reuse this run's data without re-collecting from Azure.
+
 .PARAMETER Debug
     Output detailed debug information.
 
@@ -85,6 +88,7 @@ param ([ValidateSet('AzureCloud', 'AzureUSGovernment','AzureChinaCloud')]
         [switch]$IncludeTags,
         [switch]$QuotaUsage,
         [switch]$SkipDiagram,
+        [switch]$SaveResourceCache,
         [switch]$Automation,
         $StorageAccount,
         $StorageContainer,
@@ -332,6 +336,16 @@ param ([ValidateSet('AzureCloud', 'AzureUSGovernment','AzureChinaCloud')]
                 $DDFile = ($DefaultPath + $ReportName + "_Diagram_" + (get-date -Format "yyyy-MM-dd_HH_mm") + ".xml")
             }
         Write-Debug ((get-date -Format 'yyyy-MM-dd_HH_mm_ss')+' - '+'Excel file: ' + $File)
+
+        if ($SaveResourceCache.IsPresent)
+            {
+                Write-Debug ((get-date -Format 'yyyy-MM-dd_HH_mm_ss')+' - '+'Saving Resource Cache to: ' + $DiagramCache)
+
+                $Resources | ConvertTo-Json -Depth 15 | Out-File -FilePath (Join-Path $DiagramCache 'resources.json') -Encoding utf8
+                $Subscriptions | ConvertTo-Json -Depth 15 | Out-File -FilePath (Join-Path $DiagramCache 'subscriptions.json') -Encoding utf8
+                $Advisories | ConvertTo-Json -Depth 15 | Out-File -FilePath (Join-Path $DiagramCache 'advisories.json') -Encoding utf8
+                $ResourceContainers | ConvertTo-Json -Depth 15 | Out-File -FilePath (Join-Path $DiagramCache 'resourcecontainers.json') -Encoding utf8
+            }
 
         Write-Debug ((get-date -Format 'yyyy-MM-dd_HH_mm_ss')+' - '+'Starting Default Jobs.')
 
